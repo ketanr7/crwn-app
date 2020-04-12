@@ -2,7 +2,7 @@ import firebase from 'firebase/app';
 import 'firebase/firestore';
 import 'firebase/auth';
 
-const config={
+const config = {
     apiKey: "AIzaSyD55i8EsCMnopQGz3qzNWBYIhiSSvCIjR0",
     authDomain: "crwn-db-3c6f7.firebaseapp.com",
     databaseURL: "https://crwn-db-3c6f7.firebaseio.com",
@@ -13,13 +13,38 @@ const config={
     measurementId: "G-431BRRCJMJ"
   };
 
-  firebase.initializeApp(config);
+firebase.initializeApp(config);
 
-  export const auth = firebase.auth();
-  export const firestore = firebase.firestore();
+export const createUserProfileDocument = async (userAuth, additionalData) => {
+  if (!userAuth) return;
 
-  const provider = new firebase.auth.GoogleAuthProvider();
-  provider.setCustomParameters({prompt:'select_account'});
-  export const signInWithGoogle = () => auth.signInWithPopup(provider);
+  const userRef = firestore.doc(`users/${userAuth.uid}`);
 
-  export default firebase;
+  const snapShot = await userRef.get();
+
+  if (!snapShot.exists) {
+    const { displayName, email } = userAuth;
+    const createdAt = new Date();
+    try {
+      await userRef.set({
+        displayName,
+        email,
+        createdAt,
+        ...additionalData
+      });
+    } catch (error) {
+      console.log('error creating user', error.message);
+    }
+  }
+
+  return userRef;
+};
+
+export const auth = firebase.auth();
+export const firestore = firebase.firestore();
+
+const provider = new firebase.auth.GoogleAuthProvider();
+provider.setCustomParameters({ prompt: 'select_account' });
+export const signInWithGoogle = () => auth.signInWithPopup(provider);
+
+export default firebase;
